@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import '@fontsource/anton';
+import '@fontsource/nunito/800.css';
 import '@fontsource/alfa-slab-one';
 import mono from '../assets/guaripolo.png';
 import logo from '../assets/logo31.png';
@@ -140,19 +141,22 @@ import Decoracion from '../components/Decoracion.astro';
     .botones { display: grid; grid-template-columns: repeat(2, auto); gap: 12px; justify-content: center; margin-top: 2rem; z-index: 2; }
     @media (min-width: 700px) { .botones { grid-template-columns: repeat(4, auto); } }
     .slot { position: relative; display: flex; justify-content: center; }
-    .btn { font-family: 'Anton', sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: clamp(1.1rem, 4vw, 1.6rem);
-      color: var(--crema); background: var(--negro); padding: .55em 1.3em; border-radius: 999px; text-decoration: none;
-      transition: transform .15s; }
-    .btn3d { grid-column: 1 / -1; justify-self: center; position: relative; overflow: hidden; cursor: pointer; font-family: 'Anton', sans-serif;
-      text-transform: uppercase; letter-spacing: .05em; font-size: clamp(1.2rem, 4.6vw, 1.7rem); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4);
-      padding: .55em 1.5em; border: 3px solid #fff; border-radius: 999px; background: linear-gradient(100deg, #a80016, #e3001b 50%, #f25c00);
-      box-shadow: 0 8px 20px rgba(120,0,16,.45); transition: transform .15s; }
-    .btn3d::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.75) 50%, transparent 65%);
+    /* Botones tipo Duolingo: píldora, tipografía redonda en negrita y borde inferior que simula relieve */
+    .btn, .btn3d { --edge: #d9d2bd; --bg: #fff; --ink: #3c3c3c; position: relative; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+      font-family: 'Nunito', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: clamp(.95rem, 3.6vw, 1.1rem); line-height: 1.5;
+      color: var(--ink); background: var(--bg); padding: 13px 28px; border: 2px solid var(--edge); border-radius: 9999px; text-decoration: none;
+      box-shadow: 0 4px 0 var(--edge); transition: translate .08s, box-shadow .08s, filter .15s; -webkit-tap-highlight-color: transparent; }
+    .btn:hover, .btn3d:hover { filter: brightness(1.04); }
+    .btn:active, .btn3d:active { translate: 0 4px; box-shadow: 0 0 0 var(--edge); }
+    .btn:focus-visible, .btn3d:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .slot:first-child .btn { --bg: #ffc800; --edge: #c99700; --ink: #3c3c3c; }
+    .btn3d { grid-column: 1 / -1; justify-self: center; overflow: hidden; --bg: #e3001b; --edge: #8f0012; --ink: #fff; border-color: var(--edge); }
+    .btn3d::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
       transform: translateX(-120%); animation: brillo 2.8s ease-in-out infinite; }
     @keyframes brillo { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
-    @media (prefers-reduced-motion: reduce) { .btn3d::after { animation: none; } }
-    .btn3d:hover, .btn3d:focus-visible { transform: scale(1.06); }
-    .btn:hover, .btn:focus-visible { transform: scale(1.08) rotate(-2deg); }
+    @media (prefers-reduced-motion: reduce) { .btn3d::after { animation: none; } .btn, .btn3d { transition: none; } }
+
+    
     .titeres { margin-top: auto; padding-top: 1.5rem; width: min(100vw, 820px); height: auto; }
   </style>
 </body>
