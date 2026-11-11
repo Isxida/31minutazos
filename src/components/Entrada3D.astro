@@ -95,6 +95,7 @@ const sector = ([r1, r2]: number[]) =>
     <p class="e3-nota">Arrastra o toca la entrada para girarla. Es un recuerdo de fans, no una entrada válida.</p>
     <div class="e3-acciones">
       <button type="button" class="e3-btn" id="e3-girar">Girar</button>
+      <button type="button" class="e3-btn" id="e3-descargar">Descargar PNG</button>
       <button type="button" class="e3-btn e3-btn-sec" id="e3-cambiar">Cambiar datos</button>
     </div>
   </section>
@@ -109,6 +110,8 @@ const sector = ([r1, r2]: number[]) =>
   const TITULOS = ['¿Qué día vas?', '¿Cuál es tu zona?', 'Tu entrada en 3D'];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const dato = { fecha: '', orden: '', zona: '' };
+  const leer = (sel: string) => dlg.querySelector(sel)!.textContent!.trim().toUpperCase();
+  const TEXTO_TOUR = leer('.e3-tour'), TEXTO_CIUDAD = leer('.e3-ciudad'), TEXTO_LUGAR = leer('.e3-lugar'), TEXTO_HORA = leer('.e3-hora');
   let paso = 1;
 
   function ir(n: number) {
@@ -209,6 +212,95 @@ const sector = ([r1, r2]: number[]) =>
     e.preventDefault();
   });
   document.getElementById('e3-girar')!.addEventListener('click', () => flip(1));
+
+  // Descarga: se dibuja el frente en un canvas (sin brillos ni destellos) a 40 px por "em" de la entrada.
+  const cargar = (src: string) => new Promise<HTMLImageElement>((ok, mal) => {
+    const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = src;
+  });
+  function partir(c: CanvasRenderingContext2D, texto: string, ancho: number) {
+    const lineas: string[] = []; let l = '';
+    for (const w of texto.split(' ')) {
+      if (l && c.measureText(l + ' ' + w).width > ancho) { lineas.push(l); l = w; } else l = l ? l + ' ' + w : w;
+    }
+    return l ? [...lineas, l] : lineas;
+  }
+  async function descargar() {
+    const U = 40, W = 52 * U, H = 22 * U;
+    await Promise.all(["40px Anton", "40px 'Alfa Slab One'"].map((f) => document.fonts.load(f)));
+    const logoEl = dlg.querySelector<HTMLImageElement>('.e3-front-main .e3-logo')!;
+    const monosEl = dlg.querySelector<HTMLImageElement>('.e3-titeres')!;
+    const [logo, titeres] = await Promise.all([cargar(logoEl.currentSrc || logoEl.src), cargar(monosEl.currentSrc || monosEl.src)]);
+
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d')!;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    // forma de la entrada
+    c.beginPath(); c.roundRect(0, 0, W, H, 1.1 * U); c.clip();
+    // fondo del cuerpo y del talón
+    c.fillStyle = '#f7a31c'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#ef5a3a'; c.fillRect(0, 0, 38 * U, 9.6 * U);
+    // rayitas de la franja
+    c.fillStyle = 'rgba(255,251,230,.7)';
+    for (let x = 0; x < 38 * U; x += .34 * U) { c.fillRect(x, 2.2 * U, .12 * U, .4 * U); c.fillRect(x, 7.8 * U, .12 * U, .4 * U); }
+    // logo
+    c.save(); c.shadowColor = 'rgba(0,0,0,.25)'; c.shadowBlur = .5 * U; c.shadowOffsetY = .2 * U;
+    c.beginPath(); c.arc(4.6 * U, 4.2 * U, 3 * U, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill(); c.restore();
+    c.save(); c.beginPath(); c.arc(4.6 * U, 4.2 * U, 3 * U, 0, Math.PI * 2); c.clip(); c.drawImage(logo, 1.6 * U, 1.2 * U, 6 * U, 6 * U); c.restore();
+    // título
+    c.fillStyle = '#231f20'; c.font = `${4.2 * U}px Anton`;
+    ['RADIO', 'GUARIPOLO'].forEach((t, i) => c.fillText(t, 23 * U, (0.9 + 3.864 * (i + 0.5)) * U));
+    // títeres (centrados en el cuerpo, asomando por abajo)
+    const th = 11.4 * U, tw = th * (titeres.naturalWidth / titeres.naturalHeight);
+    c.drawImage(titeres, 19 * U - tw / 2, 22.6 * U - th, tw, th);
+    // etiquetas inclinadas
+    const etiqueta = (texto: string, fuente: string, tam: number, color: string, derecha: number, arriba: number) => {
+      c.font = `${tam * U}px ${fuente}`;
+      const w = c.measureText(texto).width + tam * 1.5 * U, h = tam * 1.5 * U;
+      const x = (38 - derecha) * U - w, y = arriba * U;
+      c.save(); c.translate(x + w / 2, y + h / 2); c.rotate(-3 * Math.PI / 180);
+      c.fillStyle = '#fffbe6'; c.beginPath(); c.roundRect(-w / 2, -h / 2, w, h, .3 * tam * U); c.fill();
+      c.fillStyle = color; c.fillText(texto, 0, 0); c.restore();
+    };
+    etiqueta(TEXTO_TOUR, "'Alfa Slab One'", 1.25, '#ef4a2a', 2.3, 7.9);
+    etiqueta(dato.orden.toUpperCase(), 'Anton', 1.3, '#231f20', 2.3, 9.25);
+
+    // talón
+    const cx = 45 * U, ancho = 11.8 * U;
+    let y = 1.5;
+    const linea = (texto: string, fuente: string, tam: number, lh: number, color: string, antes: number) => {
+      y += antes; c.font = `${tam * U}px ${fuente}`; c.fillStyle = color;
+      for (const t of partir(c, texto, ancho)) { c.fillText(t, cx, (y + lh * tam / 2) * U); y += lh * tam; }
+    };
+    linea('ZONA ' + dato.zona.toUpperCase(), "'Alfa Slab One'", 1.15, 1.15, '#c2001a', 0);
+    linea(TEXTO_CIUDAD, 'Anton', 2, 1, '#231f20', .5);
+    linea(TEXTO_LUGAR, 'Anton', .98, 1.15, '#231f20', .5);
+    linea(dato.fecha.toUpperCase(), 'Anton', 1.35, 1, '#c2001a', .7);
+    linea(TEXTO_HORA, 'Anton', 1.4, 1, '#231f20', .4);
+    // barras decorativas y leyenda
+    const bs = barras(dato.fecha + dato.zona), total = bs.reduce((a, b) => a + b, 0);
+    let bx = 39.1 * U;
+    bs.forEach((w, i) => { const bw = (w / total) * ancho; if (i % 2 === 0) { c.fillStyle = '#231f20'; c.fillRect(bx, 17.2 * U, bw, 2.6 * U); } bx += bw; });
+    c.font = `700 ${.5 * U}px system-ui, sans-serif`; c.fillStyle = '#231f20';
+    if ('letterSpacing' in c) (c as any).letterSpacing = `${.03 * U}px`;
+    c.fillText('RECUERDO FAN · SIN VALIDEZ DE INGRESO', cx, 20.55 * U);
+    if ('letterSpacing' in c) (c as any).letterSpacing = '0px';
+    // línea de corte
+    c.strokeStyle = 'rgba(35,31,32,.5)'; c.lineWidth = .12 * U; c.setLineDash([.33 * U, .27 * U]);
+    c.beginPath(); c.moveTo(38 * U, .9 * U); c.lineTo(38 * U, 21.1 * U); c.stroke(); c.setLineDash([]);
+    // muescas
+    c.globalCompositeOperation = 'destination-out';
+    for (const oy of [0, 22]) { c.beginPath(); c.arc(38 * U, oy * U, .8 * U, 0, Math.PI * 2); c.fill(); }
+
+    cv.toBlob((b) => {
+      if (!b) return;
+      const a = document.createElement('a');
+      const slug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+      a.href = URL.createObjectURL(b); a.download = `entrada-31minutazos-${slug(dato.fecha)}-${slug(dato.zona)}.png`;
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  }
+  document.getElementById('e3-descargar')!.addEventListener('click', descargar);
+
 </script>
 
 <style is:global>

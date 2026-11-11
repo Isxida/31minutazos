@@ -21,7 +21,7 @@ import Decoracion from '../components/Decoracion.astro';
 <body>
   <Decoracion />
   <main>
-    <button id="mute" type="button" aria-label="Silenciar música" aria-pressed="false">
+    <button id="mute" type="button" aria-label="Activar música" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>
         <path class="ondas" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/>
@@ -58,7 +58,7 @@ import Decoracion from '../components/Decoracion.astro';
     <Image class="titeres" src={titeres} alt="Los títeres de 31 Minutos" widths={[480, 825]} sizes="(min-width: 900px) 820px, 100vw" loading="eager" />
   </main>
   <Entrada3D />
-  <audio id="musica" src="/musica.mp3" loop preload="auto"></audio>
+  <audio id="musica" src="/musica.mp3" loop preload="none"></audio>
 
   <script>
     import { gsap } from 'gsap';
@@ -84,21 +84,19 @@ import Decoracion from '../components/Decoracion.astro';
     }
 
 
-    const mute = document.getElementById('mute') as HTMLButtonElement;
-    mute.addEventListener('click', () => {
-      audio.muted = !audio.muted;
-      mute.setAttribute('aria-pressed', String(audio.muted));
-      mute.setAttribute('aria-label', audio.muted ? 'Activar música' : 'Silenciar música');
-    });
-
-    // Los navegadores bloquean autoplay con sonido: se reintenta en el primer toque.
+    // La música arranca apagada: solo suena si el usuario la activa con el botón.
     const audio = document.getElementById('musica') as HTMLAudioElement;
     audio.volume = evento.volumen;
-    const play = () => audio.play().then(() => {
-      for (const e of ['pointerdown', 'keydown']) removeEventListener(e, play);
-    }).catch(() => {});
-    play();
-    for (const e of ['pointerdown', 'keydown']) addEventListener(e, play);
+    const mute = document.getElementById('mute') as HTMLButtonElement;
+    const estado = () => {
+      mute.setAttribute('aria-pressed', String(audio.paused));
+      mute.setAttribute('aria-label', audio.paused ? 'Activar música' : 'Silenciar música');
+    };
+    mute.addEventListener('click', () => {
+      if (audio.paused) audio.play().catch(() => {}); else audio.pause();
+    });
+    audio.addEventListener('play', estado);
+    audio.addEventListener('pause', estado);
   </script>
 
   <style is:global>
