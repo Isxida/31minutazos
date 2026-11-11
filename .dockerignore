@@ -1,0 +1,11 @@
+node_modules
+dist
+.astro
+.git
+.idea
+.claude
+venv
+yolov8n-seg.pt
+exp_ticket.zip
+Intro_images
+personas_recortadas
