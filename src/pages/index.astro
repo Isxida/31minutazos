@@ -1,0 +1,157 @@
+---
+import { Image } from 'astro:assets';
+import '@fontsource/anton';
+import '@fontsource/alfa-slab-one';
+import mono from '../assets/guaripolo.png';
+import logo from '../assets/logo31.png';
+import tituloFc from '../assets/titulo-fc.png';
+import titeres from '../assets/titeres.png';
+import { evento } from '../data/evento';
+import Entrada3D from '../components/Entrada3D.astro';
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radio Guaripolo Tour 2026 · 31 Minutos</title>
+  <meta name="theme-color" content="#ff4500" />
+</head>
+<body>
+  <main>
+    <button id="mute" type="button" aria-label="Silenciar música" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>
+        <path class="ondas" d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/>
+        <path class="tacha" d="M16 9l6 6M22 9l-6 6"/>
+      </svg>
+    </button>
+    <div class="marca">
+      <Image class="logo" src={logo} alt="31 Minutos" width={130} height={130} loading="eager" />
+      <Image class="fan" src={tituloFc} alt="31 Minutazos.pe" widths={[400, 800]} sizes="(min-width: 600px) 480px, 84vw" loading="eager" />
+    </div>
+    <h1 class="titulo" aria-label={evento.titulo.join(' ')}>
+      {evento.titulo.map((l) => <span class="linea" aria-hidden="true">{l}</span>)}
+      <Image class="mono" src={mono} alt="" widths={[240, 480]} sizes="(min-width: 700px) 300px, 45vw" loading="eager" />
+      <span class="tag">{evento.etiqueta}</span>
+    </h1>
+    <section class="info" aria-label="Fechas y lugar">
+      <p class="ciudad">{evento.ciudad}</p>
+      <p class="lugar">{evento.lugar}</p>
+      <p class="fecha-main">{evento.fechaPrincipal}</p>
+      <ul class="agotadas">
+        {evento.fechasAgotadas.map((f) => (
+          <li class="agotada"><span class="dia">{f}</span><span class="sello">Agotado</span></li>
+        ))}
+      </ul>
+    </section>
+    <nav class="botones">
+      {evento.botones.map((b, i) => (
+        <div class="slot">
+          <a class="btn" href={b.href} target="_blank" rel="noopener">{b.texto}</a>
+        </div>
+      ))}
+      <button id="abrir-entrada" class="btn3d" type="button">Mi entrada en 3D</button>
+    </nav>
+    <Image class="titeres" src={titeres} alt="Los títeres de 31 Minutos" widths={[480, 825]} sizes="(min-width: 900px) 820px, 100vw" loading="eager" />
+  </main>
+  <Entrada3D />
+  <audio id="musica" src="/musica.mp3" loop preload="auto"></audio>
+
+  <script>
+    import { gsap } from 'gsap';
+    import { evento } from '../data/evento';
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce) {
+      gsap.timeline({ defaults: { ease: 'bounce.out' } })
+        .from('.logo', { scale: 0, rotation: -40, duration: 0.9, ease: 'back.out(2)' })
+        .from('.fan', { scale: 0, rotation: -8, duration: 1, ease: 'elastic.out(1, 0.55)' }, 0.15)
+        .from('.mono', { yPercent: 40, opacity: 0, duration: 0.8, ease: 'back.out(1.6)' }, '>-0.3')
+        .from('.linea', { yPercent: -250, opacity: 0, duration: 1.1, stagger: 0.18 }, 0.5)
+        .from('.tag', { scale: 0, rotation: 8, duration: 0.7, ease: 'back.out(2.5)' }, '>-0.5')
+        .from('.info', { yPercent: 30, opacity: 0, scale: 0.9, duration: 0.7, ease: 'power3.out' }, '>-0.2')
+        .from('.fecha-main', { scale: 0.7, opacity: 0, duration: 0.6, ease: 'back.out(2)' }, '>-0.3')
+        .from('.agotada .dia', { opacity: 0, y: 10, duration: 0.4, stagger: 0.1 }, '>-0.1')
+        // "Oh no": el sello cae con golpe y la fecha se sacude.
+        .from('.sello', { scale: 3, opacity: 0, rotation: 0, duration: 0.35, stagger: 0.35, ease: 'power4.in' }, '>0.1')
+        .to('.agotada', { keyframes: { x: [0, -7, 6, -4, 2, 0] }, duration: 0.4, stagger: 0.35, ease: 'none' }, '<0.3')
+        .to('.agotada .dia', { opacity: 0.55, duration: 0.3, stagger: 0.35 }, '<')
+        .from('.btn, .btn3d', { opacity: 0, scale: 0.6, duration: 0.6, stagger: 0.12, ease: 'back.out(2)' }, '>-0.3')
+        .from('.titeres', { yPercent: 105, duration: 1.1, ease: 'back.out(1.2)' }, '<');
+    }
+
+
+    const mute = document.getElementById('mute') as HTMLButtonElement;
+    mute.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      mute.setAttribute('aria-pressed', String(audio.muted));
+      mute.setAttribute('aria-label', audio.muted ? 'Activar música' : 'Silenciar música');
+    });
+
+    // Los navegadores bloquean autoplay con sonido: se reintenta en el primer toque.
+    const audio = document.getElementById('musica') as HTMLAudioElement;
+    audio.volume = evento.volumen;
+    const play = () => audio.play().then(() => {
+      for (const e of ['pointerdown', 'keydown']) removeEventListener(e, play);
+    }).catch(() => {});
+    play();
+    for (const e of ['pointerdown', 'keydown']) addEventListener(e, play);
+  </script>
+
+  <style is:global>
+    :root { --naranja: #ff4500; --negro: #231f20; --crema: #fffbe6; }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { background: var(--naranja); overflow-x: hidden; }
+    ::selection { background: var(--negro); color: var(--crema); }
+    main {
+      position: relative; min-height: 100dvh; display: flex; flex-direction: column;
+      align-items: center; padding: 4vh 16px 0; overflow: hidden;
+    }
+    .info { background: #ffc800; color: var(--negro); text-align: center; font-family: 'Anton', sans-serif; text-transform: uppercase;
+      width: min(100%, 640px); margin-top: 3vh; padding: 1rem 1rem 1.1rem; border-radius: 1rem; box-shadow: 0 10px 24px rgba(35,31,32,.28); z-index: 2; }
+    .ciudad { font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1; }
+    .lugar { font-size: clamp(.95rem, 3.6vw, 1.3rem); letter-spacing: .02em; margin-top: .3rem; }
+    .fecha-main { color: #1a54b8; font-size: clamp(2rem, 9vw, 3.2rem); line-height: 1.1; margin-top: .35rem; }
+    .agotadas { list-style: none; padding: 0; margin-top: .5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.2rem; }
+    .agotada { position: relative; font-size: clamp(.9rem, 3.4vw, 1.2rem); }
+    .sello { position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; rotate: -8deg; white-space: nowrap; font-size: .8em; line-height: 1;
+      color: #fff; background: #d0021b; border: 2px solid #fff; border-radius: .2em; padding: .12em .4em; letter-spacing: .05em; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+    .agotada:nth-child(2) .sello { rotate: 5deg; }
+    .marca { position: relative; width: min(84vw, 480px); margin-top: 7vh; }
+    .fan { display: block; position: relative; width: 100%; height: auto; }
+    /* El logo se acomoda en el hueco del título, al lado del "31", y el texto lo pisa un poco */
+    .logo { position: absolute; left: 41%; top: -16%; width: 25%; height: auto; border-radius: 50%; }
+    .mono { position: absolute; left: 50%; bottom: .15em; translate: -50% 0; height: 1.9em; width: auto; z-index: 1; pointer-events: none; }
+    .tag { position: relative; z-index: 2; }
+    #mute { position: fixed; top: 12px; left: 12px; z-index: 5; width: 48px; height: 48px; padding: 11px; border: 0; border-radius: 50%; cursor: pointer;
+      background: var(--negro); color: var(--crema); box-shadow: 0 4px 10px rgba(0,0,0,.3); transition: transform .15s; }
+    #mute:hover, #mute:focus-visible { transform: scale(1.1); }
+    #mute svg { width: 100%; height: 100%; display: block; }
+    #mute .tacha { display: none; }
+    #mute[aria-pressed='true'] .tacha { display: inline; }
+    #mute[aria-pressed='true'] .ondas { display: none; }
+    .titulo { position: relative; font-family: 'Anton', sans-serif; font-weight: 400; color: var(--negro); text-align: center;
+      font-size: clamp(3.5rem, 17vw, 9rem); line-height: .92; text-transform: uppercase; margin-top: 2vh; }
+    .linea { display: block; will-change: transform; }
+    .tag { display: inline-block; font-family: 'Alfa Slab One', serif; font-size: .28em; color: var(--naranja);
+      background: var(--crema); padding: .15em .5em; border-radius: .25em; transform: rotate(-3deg); margin-top: .15em; }
+    .botones { display: grid; grid-template-columns: repeat(2, auto); gap: 12px; justify-content: center; margin-top: 2rem; z-index: 2; }
+    @media (min-width: 700px) { .botones { grid-template-columns: repeat(4, auto); } }
+    .slot { position: relative; display: flex; justify-content: center; }
+    .btn { font-family: 'Anton', sans-serif; text-transform: uppercase; letter-spacing: .04em; font-size: clamp(1.1rem, 4vw, 1.6rem);
+      color: var(--crema); background: var(--negro); padding: .55em 1.3em; border-radius: 999px; text-decoration: none;
+      transition: transform .15s; }
+    .btn3d { grid-column: 1 / -1; justify-self: center; position: relative; overflow: hidden; cursor: pointer; font-family: 'Anton', sans-serif;
+      text-transform: uppercase; letter-spacing: .05em; font-size: clamp(1.2rem, 4.6vw, 1.7rem); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.4);
+      padding: .55em 1.5em; border: 3px solid #fff; border-radius: 999px; background: linear-gradient(100deg, #a80016, #e3001b 50%, #f25c00);
+      box-shadow: 0 8px 20px rgba(120,0,16,.45); transition: transform .15s; }
+    .btn3d::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.75) 50%, transparent 65%);
+      transform: translateX(-120%); animation: brillo 2.8s ease-in-out infinite; }
+    @keyframes brillo { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+    @media (prefers-reduced-motion: reduce) { .btn3d::after { animation: none; } }
+    .btn3d:hover, .btn3d:focus-visible { transform: scale(1.06); }
+    .btn:hover, .btn:focus-visible { transform: scale(1.08) rotate(-2deg); }
+    .titeres { margin-top: auto; padding-top: 1.5rem; width: min(100vw, 820px); height: auto; }
+  </style>
+</body>
+</html>

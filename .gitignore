@@ -1,0 +1,7 @@
+
+# local env / models
+venv/
+yolov8n-seg.pt
+node_modules/
+dist/
+.astro/

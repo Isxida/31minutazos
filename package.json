@@ -1,0 +1,16 @@
+{
+  "name": "31minutazos",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@fontsource/alfa-slab-one": "^5.3.0",
+    "@fontsource/anton": "^5.3.0",
+    "astro": "^7.4.10",
+    "gsap": "^3.15.1"
+  }
+}
